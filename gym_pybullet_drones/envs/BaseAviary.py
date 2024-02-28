@@ -61,7 +61,7 @@ class BaseAviary(gym.Env):
         gui : bool, optional
             Whether to use PyBullet's GUI.
         record : bool, optional
-            Whether to save a video of the simulation in folder `files/videos/`.
+            Whether to save a video of the simulation.
         obstacles : bool, optional
             Whether to add obstacles to the simulation.
         user_debug_gui : bool, optional
@@ -338,7 +338,6 @@ class BaseAviary(gym.Env):
                                                           ) for i in range(self.NUM_DRONES)]
         #### Save, preprocess, and clip the action to the max. RPM #
         else:
-            self._saveLastAction(action)
             clipped_action = np.reshape(self._preprocessAction(action), (self.NUM_DRONES, 4))
         #### Repeat for as many as the aggregate physics steps #####
         for _ in range(self.PYB_STEPS_PER_CTRL):
@@ -466,7 +465,6 @@ class BaseAviary(gym.Env):
         self.GUI_INPUT_TEXT = -1*np.ones(self.NUM_DRONES)
         self.USE_GUI_RPM=False
         self.last_input_switch = 0
-        self.last_action = -1*np.ones((self.NUM_DRONES, 4))
         self.last_clipped_action = np.zeros((self.NUM_DRONES, 4))
         self.gui_input = np.zeros(4)
         #### Initialize the drones kinemaatic information ##########
@@ -775,7 +773,7 @@ class BaseAviary(gym.Env):
         base_rot = np.array(p.getMatrixFromQuaternion(self.quat[nth_drone, :])).reshape(3, 3)
         #### Simple draft model applied to the base/center of mass #
         drag_factors = -1 * self.DRAG_COEFF * np.sum(np.array(2*np.pi*rpm/60))
-        drag = np.dot(base_rot, drag_factors*np.array(self.vel[nth_drone, :]))
+        drag = np.dot(base_rot.T, drag_factors*np.array(self.vel[nth_drone, :]))
         p.applyExternalForce(self.DRONE_IDS[nth_drone],
                              4,
                              forceObj=drag,
@@ -861,7 +859,7 @@ class BaseAviary(gym.Env):
         vel = vel + self.PYB_TIMESTEP * no_pybullet_dyn_accs
         rpy_rates = rpy_rates + self.PYB_TIMESTEP * rpy_rates_deriv
         pos = pos + self.PYB_TIMESTEP * vel
-        quat = self._integrateQ(quat, rpy_rates, self.TIMESTEP)
+        quat = self._integrateQ(quat, rpy_rates, self.PYB_TIMESTEP)
         #### Set PyBullet's state ##################################
         p.resetBasePositionAndOrientation(self.DRONE_IDS[nth_drone],
                                           pos,
