@@ -929,7 +929,7 @@ class BaseAviary(gym.Env):
             Ndarray containing the current RPMs input for each drone.
 
         """
-        self.last_action = np.reshape(action, (self.NUM_DRONES, 4))
+        self.last_action = np.reshape(action, (self.NUM_DRONES, action.size))
     
     ################################################################################
 
